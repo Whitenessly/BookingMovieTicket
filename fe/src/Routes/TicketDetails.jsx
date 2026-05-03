@@ -2,7 +2,7 @@ import React from 'react'
 import { LeftOutlined } from '@ant-design/icons'
 import { useParams, Navigate } from 'react-router'
 import { Input, QRCode, Space } from 'antd';
-import QRCheckout from '../../public/Screenshot 2025-08-01 153306.png'
+import QRCheckout from '/public/Screenshot 2025-08-01 153306.png'
 
 
 const TicketDetails = () => {
