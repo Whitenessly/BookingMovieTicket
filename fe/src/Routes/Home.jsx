@@ -6,29 +6,58 @@ import 'owl.carousel/dist/assets/owl.carousel.css';
 import 'owl.carousel/dist/assets/owl.theme.default.css';
 import Item from '../Components/Item'
 
-
 const Home = () => {
-  localStorage.removeItem("staffLogin")
   const pageStatus = 1
-  const [movies, setMovies] = React.useState([]);
+  const [moviesLatest, setMoviesLatest] = React.useState([]);
+  const [mostRating, setMostRating] = React.useState([]);
+  const [moviesLatestComedy, setMoviesLatestComedy] = React.useState([]);
+  const [moviesLatestRomance, setMoviesLatestRomance] = React.useState([]);
   const [getting, setGetting] = React.useState(false);
-  React.useEffect(() => {
-    fetch('http://localhost:4000/movies')
+
+  const handleAPI = async () => {
+    await fetch('http://localhost:8080/home')
       .then(response => response.json())
       .then(data => {
-        setMovies(data);
+        setMoviesLatest(data.data);
+      })
+      .catch(error => {
+        console.error('Error fetching movies:', error);
+      })
+
+    await fetch('http://localhost:8080/home?sortBy=rating')
+      .then(response => response.json())
+      .then(data => {
+        setMostRating(data.data);
+      })
+      .catch(error => {
+        console.error('Error fetching movies:', error);
+      })
+
+    await fetch('http://localhost:8080/home?genre=comedy')
+      .then(response => response.json())
+      .then(data => {
+        setMoviesLatestComedy(data.data);
+      })
+      .catch(error => {
+        console.error('Error fetching movies:', error);
+      })
+
+    await fetch('http://localhost:8080/home?genre=romance')
+      .then(response => response.json())
+      .then(data => {
+        setMoviesLatestRomance(data.data);
       })
       .catch(error => {
         console.error('Error fetching movies:', error);
       })
       .finally(() => {
-        setGetting(true)
+        setGetting(true);
       })
+  }
+
+  React.useEffect(() => {
+    handleAPI();
   }, [])
-  const latest = [...movies].sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)).splice(0, 10)
-  const mostRating = [...movies].sort((a, b) => b.rating - a.rating).splice(0, 10)
-  const comedy = [...movies].sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)).filter((item) => item.genres.includes('Comedy')).splice(0, 10)
-  const romance = [...movies].sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)).filter((item) => item.genres.includes('Romance')).splice(0, 10)
 
   const options = {
     loop: false,
@@ -46,11 +75,11 @@ const Home = () => {
           <p className='text-lg text-left'>Book your favoutrite movie</p>
           <div className='flex flex-row justify-between items-center'>
             <p className='text-xl font-bold'>Latest movies</p>
-            <Link to='/movie' className='text-xl text-pink-400'>See All</Link>
+            <Link to='/movies' className='text-xl text-pink-400'>See All</Link>
           </div>
           {(getting) ?
             <ReactOwlCarousel className="owl-theme w-full" {...options}>
-              {latest.map((movie) => {
+              {moviesLatest.map((movie) => {
                 return <Item movie={movie} />
               })}
             </ReactOwlCarousel>
@@ -58,7 +87,7 @@ const Home = () => {
           }
           <div className='flex flex-row justify-between items-center'>
             <p className='text-xl font-bold'>Highest rating</p>
-            <Link to='/rating' className='text-xl text-pink-400'>See All</Link>
+            <Link to='/movies?sortBy=rating' className='text-xl text-pink-400'>See All</Link>
           </div>
           {(getting) ?
             <ReactOwlCarousel className="owl-theme w-full" {...options}>
@@ -70,11 +99,11 @@ const Home = () => {
           }
           <div className='flex flex-row justify-between items-center'>
             <p className='text-xl font-bold'>Comedy</p>
-            <Link to='/search?key=comedy' className='text-xl text-pink-400'>See All</Link>
+            <Link to='/movies?search=comedy' className='text-xl text-pink-400'>See All</Link>
           </div>
           {(getting) ?
             <ReactOwlCarousel className="owl-theme w-full" {...options}>
-              {comedy.map((movie) => {
+              {moviesLatestComedy.map((movie) => {
                 return <Item movie={movie} />
               })}
             </ReactOwlCarousel>
@@ -82,11 +111,11 @@ const Home = () => {
           }
           <div className='flex flex-row justify-between items-center'>
             <p className='text-xl font-bold'>Romance</p>
-            <Link to='/search?key=romance' className='text-xl text-pink-400'>See All</Link>
+            <Link to='/movies?search=romance' className='text-xl text-pink-400'>See All</Link>
           </div>
           {(getting) ?
             <ReactOwlCarousel className="owl-theme w-full" {...options}>
-              {romance.map((movie) => {
+              {moviesLatestRomance.map((movie) => {
                 return <Item movie={movie} />
               })}
             </ReactOwlCarousel>

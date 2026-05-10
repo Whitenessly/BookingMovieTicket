@@ -6,7 +6,7 @@ const Item = (props) => {
     const nav = useNavigate()
 
     return (
-        <div onClick={() => nav(`/movie/${props.movie.id}`)} className='bg-purple-500 item w-[150px] h-[250px] rounded-2xl flex flex-col shadow-2xl'>
+        <div onClick={() => nav(`/movie/${props.movie._id}`)} className='bg-purple-500 item w-[150px] h-[250px] rounded-2xl flex flex-col shadow-2xl'>
             <div className='w-full h-3/4'>
                 <img src={props.movie.image} alt={props.movie.title} className='w-full h-full object-cover rounded-xl' />
             </div>

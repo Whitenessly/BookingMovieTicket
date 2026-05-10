@@ -5,28 +5,23 @@ import { LeftOutlined } from '@ant-design/icons'
 
 
 const SignUp = () => {
-    localStorage.removeItem("staffLogin")
-    const userLocal = localStorage.getItem('userId')
-    if (userLocal) {
-        return <Navigate to={"/home"} />;
-    }
     const nav = useNavigate();
 
-    const [usernameValue, setUsernameValue] = React.useState();
-    const [emailValue, setEmailValue] = React.useState();
-    const [passwordValue, setPasswordValue] = React.useState();
-    const [confirmPasswordValue, setConfirmPasswordValue] = React.useState();
+    const [usernameValue, setUsernameValue] = React.useState('');
+    const [emailValue, setEmailValue] = React.useState('');
+    const [passwordValue, setPasswordValue] = React.useState('');
+    const [confirmPasswordValue, setConfirmPasswordValue] = React.useState('');
 
-    const [warningUsername, setWarningUsername] = React.useState();
-    const [warningEmail, setWarningEmail] = React.useState();
-    const [warningPassword, setWarningPassword] = React.useState();
-    const [warningConfirmPassword, setWarningConfirmPassword] = React.useState();
+    const [warningUsername, setWarningUsername] = React.useState('');
+    const [warningEmail, setWarningEmail] = React.useState('');
+    const [warningPassword, setWarningPassword] = React.useState('');
+    const [warningConfirmPassword, setWarningConfirmPassword] = React.useState('');
 
     const onChangeUsername = (event) => {
         setUsernameValue(event.target.value);
         if (event.target.value.length < 3 && event.target.value.length > 0) {
             setWarningUsername('Username must be at least 3 characters long');
-        } else if (event.target.value.length > 20) {
+        } else if (event.target.value.length > 19) {
             setWarningUsername('Username must be less than 20 characters long');
         } else {
             setWarningUsername('');
@@ -58,34 +53,42 @@ const SignUp = () => {
         }
     }
 
-    const [notiModal, setNotiModal] = React.useState(false)
-    const onClickNotiModal = () => {
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (passwordValue === confirmPasswordValue && passwordValue.length >= 8 && emailPattern.test(emailValue) && emailValue.length > 0 && usernameValue.length >= 3 && usernameValue.length <= 20) {
-            setNotiModal(true)
-        }
-    }
+    const [notification, setNotification] = React.useState('')
+
     const onSubmit = async (event) => {
         event.preventDefault();
 
-        const body = {
-            id: `${Date.now()}`,
-            username: `${usernameValue}`,
-            email: `${emailValue}`,
-            password: `${passwordValue}`,
-            role: "user"
+        if (confirmPasswordValue !== passwordValue) {
+            setNotification('Confirm password and password mismatched');
+            return;
         }
 
-        await fetch("http://localhost:4000/users", {
+        const response = await fetch("http://localhost:8080/users/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(
+                {
+                    userName: `${usernameValue}`,
+                    email: `${emailValue}`,
+                    password: `${passwordValue}`,
+                }
+            ),
         });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            setNotification('');
+        } else {
+            setNotification(result.message);
+            return;
+        }
 
         nav('/login');
     };
+
     const onClickReturn = () => {
         nav('/login');
     }
@@ -114,21 +117,12 @@ const SignUp = () => {
                         <div className='pl-3 text-red-500 text-md h-6'>{warningPassword}</div>
                         <input onChange={onChangeConfirmPassword} type="password" className='text-lg border-[#A9A2A333] border-2 w-full px-5 py-3 rounded-lg focus:border-pink-400 ' placeholder='Confirm password' />
                         <div className='pl-3 text-red-500 text-md h-6'>{warningConfirmPassword}</div>
-                        <div onClick={onClickNotiModal} className='text-lg w-full px-5 py-3 rounded-lg border-b-2 border-r-2 border-gray-200 bg-pink-500 text-center'>Sign up</div>
+                        <div onClick={onSubmit} className='text-lg w-full px-5 py-3 rounded-lg border-b-2 border-r-2 border-gray-200 bg-pink-500 text-center'>Sign up</div>
                     </form>
+                    <div>{notification}</div>
                 </div>
                 <div className='text-lg'>Already have an account? <Link to={'/login'} className='text-[#FF515A] text-lg'>Log in</Link></div>
             </div>
-            {(notiModal) ?
-                <div className='w-full h-full fixed z-10 top-0 bg-black/70 flex justify-center items-center'>
-                    <div className='bg-purple-800 p-5 rounded-xl flex flex-col items-center gap-5'>
-                        <p className='font-semibold text-lg'>Account created succesfully</p>
-                        <p className='text-orange-500'>/* Now please login to your account */</p>
-                        <div onClick={onSubmit} className='text-lg flex flex-row justify-center border-b-2 border-r-2 border-gray-200 bg-pink-500 w-full py-2 rounded-lg'>Back to Login</div>
-                    </div>
-                </div>
-                : null
-            }
         </>
 
     )

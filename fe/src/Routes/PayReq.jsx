@@ -6,36 +6,21 @@ import { MdCancelPresentation } from "react-icons/md";
 
 const PayReq = () => {
     const nav = useNavigate()
-    const localStaff = localStorage.getItem("staffLogin")
-    if (!localStaff) {
-        return <Navigate to={"/staff"} />;
-    }
     const onClickReturn = () => {
-        history.back()
-    }
+        nav(-1); // Chuẩn React Router thay cho history.back()
+    };
     const [payments, setPayments] = React.useState([]);
     React.useEffect(() => {
-        fetch('http://localhost:4000/payReq')
+        fetch('http://localhost:8080/payRequest')
             .then(response => response.json())
-            .then(data => {
-                data.reverse()
-                setPayments(data);
+            .then(result => {
+                if (result.success) {
+                    setPayments(result.data); // result.data từ BE đã filter chưa xác nhận & sort rồi
+                }
             })
             .catch(error => {
-                location.reload();
-                console.error('Error fetching movies:', error);
+                console.error('Error fetching pay requests:', error);
             });
-    }, [])
-    const [tickets, setTickets] = React.useState([])
-    React.useEffect(() => {
-        fetch(`http://localhost:4000/tickets`)
-            .then((response) => response.json())
-            .then((data) => {
-                setTickets(data)
-            })
-            .catch((error) => {
-                console.error(error)
-            })
     }, [])
 
 
@@ -49,27 +34,20 @@ const PayReq = () => {
                 {payments.map((item) => {
                     const cancelPayment = async (e) => {
                         e.preventDefault()
-                        await fetch(`http://localhost:4000/payReq/${item.id}`, {
+                        
+                        await fetch(`http://localhost:8080/payRequest/${item._id}`, {
                             method: "DELETE",
                         });
                         location.reload();
                     }
                     const acceptPayment = async (e) => {
                         e.preventDefault()
-                        const ticket = tickets.find(ticket => ticket.id === item.id)
-                        console.log(ticket)
-                        await fetch(`http://localhost:4000/tickets/${item.id}`, {
+                        
+                        await fetch(`http://localhost:8080/payRequest/${item._id}`, {
                             method: "PUT",
                             header: {
                                 "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                                ...ticket,
-                                paid: true,
-                            }),
-                        });
-                        await fetch(`http://localhost:4000/payReq/${item.id}`, {
-                            method: "DELETE",
+                            }
                         });
                         location.reload();
                     }
@@ -77,9 +55,9 @@ const PayReq = () => {
                         <>
                             <div className='bg-pink-800 p-3 rounded-lg flex flex-row justify-between items-center'>
                                 <div className='flex flex-col text-lg '>
-                                    <div>Ticket: {item.id}</div>
+                                    <div>Ticket: {item._id}</div>
                                     <div>Total: ${item.price}</div>
-                                    <Link to={`/staff/ticket/${item.id}`}><div className='bg-purple-600 text-center py-1 px-2 font-medium rounded-lg border-b-2 border-r-2 border-gray-300'>Detail</div></Link>
+                                    <Link to={`/staff/ticket/${item.ticketId}`}><div className='bg-purple-600 text-center py-1 px-2 font-medium rounded-lg border-b-2 border-r-2 border-gray-300'>Detail</div></Link>
                                 </div>
                                 <div className='flex flex-row gap-3 items-center text-4xl'>
                                     <div onClick={cancelPayment}><MdCancelPresentation /></div>

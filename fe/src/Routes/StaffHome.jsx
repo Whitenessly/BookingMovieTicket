@@ -7,12 +7,7 @@ import { FaUserPlus } from "react-icons/fa6";
 
 const StaffHome = () => {
     const nav = useNavigate()
-    const localStaff = localStorage.getItem("staffLogin")
-    if (!localStaff) {
-        return <Navigate to={"/staff"} />;
-    }
     const onClickReturn = () => {
-        localStorage.removeItem("staffLogin")
         nav('/home');
     }
 

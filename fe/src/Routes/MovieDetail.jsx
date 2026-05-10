@@ -3,17 +3,16 @@ import { LeftOutlined, VideoCameraOutlined, ClockCircleOutlined, StarOutlined } 
 import { useNavigate, useParams } from 'react-router'
 
 const MovieDetail = () => {
-    localStorage.removeItem("staffLogin")
     const nav = useNavigate()
     const movieId = useParams()
 
     const [movie, setMovie] = React.useState();
 
     React.useEffect(() => {
-        fetch(`http://localhost:4000/movies/${movieId.id}`)
+        fetch(`http://localhost:8080/movie/${movieId.id}`)
             .then(response => response.json())
             .then(data => {
-                setMovie(data);
+                setMovie(data.data);
             })
             .catch(error => {
                 console.error('Error fetching movies:', error);

@@ -1,173 +1,198 @@
-import React from 'react'
-import { LeftOutlined } from '@ant-design/icons'
-import { useParams, Navigate } from 'react-router'
-import { Input, QRCode, Space } from 'antd';
-import QRCheckout from '/public/Screenshot 2025-08-01 153306.png'
+import React, { useState, useEffect } from 'react';
+import { LeftOutlined } from '@ant-design/icons';
+import { useParams, useNavigate } from 'react-router';
+import { QRCode, Space, message } from 'antd';
+import QRCheckout from '/public/Screenshot 2025-08-01 153306.png';
 
+const formatSeats = (seatsArray) => {
+    if (!seatsArray || seatsArray.length === 0) return '';
+    const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+    return seatsArray.map(seatNumber => {
+        const rowIndex = Math.floor((seatNumber - 1) / 8);
+        const colIndex = ((seatNumber - 1) % 8) + 1;
+        return `${rowLetters[rowIndex]}${colIndex}`;
+    }).join(', ');
+};
 
 const TicketDetails = () => {
-    localStorage.removeItem("staffLogin")
-    const userLocal = localStorage.getItem('userId')
-    if (!userLocal) {
-        return <Navigate to={"/login"} />;
-    }
-    const ticketParam = useParams()
-    // console.log(ticket)
+    const { id: ticketId } = useParams();
+    const nav = useNavigate();
 
-    const [ticket, setTicket] = React.useState([]);
-    React.useEffect(() => {
-        fetch(`http://localhost:4000/tickets/${ticketParam.id}`)
-            .then(response => response.json())
-            .then(data => {
-                setTicket(data)
-            })
-            .catch(error => {
-                console.error('Error fetching movies:', error);
-            })
-    }, []);
-    const [users, setUsers] = React.useState([]);
-    React.useEffect(() => {
-        fetch(`http://localhost:4000/users`)
-            .then((response) => response.json())
-            .then((data) => {
-                setUsers(data)
-            })
-            .catch((error) => {
-                console.error(error)
-            })
-    }, [])
-    const user = users.find(user => user.id === ticket.userId)
-    const seats = ticket.seats
-    if (seats) {
-        for (let i = 0; i < seats.length; i++) {
-            (seats[i] > 48) ? seats[i] = `G${seats[i] % 48} ` : (seats[i] > 40) ? seats[i] = `E${seats[i] % 40} ` : (seats[i] > 32) ? seats[i] = `F${seats[i] % 32} ` : (seats[i] > 24) ? seats[i] = `D${seats[i] % 24} ` : (seats[i] > 16) ? seats[i] = `C${seats[i] % 16} ` : (seats[i] > 8) ? seats[i] = `B${seats[i] % 8} ` : (seats[i] > 0) ? seats[i] = `A${seats[i]} ` : null
-        }
-    }
-    const [paidModel, setPaidModel] = React.useState(false)
-    const onClickOpenPaid = () => {
-        setPaidModel(true)
-    }
-    const onClickClosePaid = () => {
-        setPaidModel(false)
-    }
-    const [request, setRequest] = React.useState([]);
-    React.useEffect(() => {
-        fetch(`http://localhost:4000/payReq`)
-            .then((response) => response.json())
-            .then((data) => {
-                setRequest(data)
-            })
-            .catch((error) => {
-                console.error(error)
-            })
-    }, [])
-    const req = request.find(item => item.id === `${ticketParam.id}`)
+    const [ticket, setTicket] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [paidModel, setPaidModel] = useState(false);
+    const [isRequesting, setIsRequesting] = useState(false);
 
-    const submitPaid = async (e) => {
-        e.preventDefault()
-        const body = {
-            price: `${(ticket.seats.length * 4998) / 100}`,
-            id: `${ticketParam.id}`,
-        }
-        console.log(body)
-        await fetch("http://localhost:4000/payReq", {
-            method: "POST",
-            header: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body),
-        });
-        location.reload();
-    }
+    useEffect(() => {
+        const fetchTicketDetails = async () => {
+            try {
+                const response = await fetch(`http://localhost:8080/ticket/details/${ticketId}`);
+                const result = await response.json();
+
+                if (response.ok) {
+                    setTicket(result.data);
+                } else {
+                    message.error(result.message || "Không tìm thấy vé");
+                }
+            } catch (error) {
+                console.error('Lỗi khi tải chi tiết vé:', error);
+                message.error("Lỗi kết nối máy chủ");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTicketDetails();
+    }, [ticketId]);
+
 
     const onClickReturn = () => {
-        history.back()
-    }
-    const [text, setText] = React.useState(`${ticketParam.id}`);
+        nav(-1);
+    };
+
+    const submitPaid = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch('http://localhost:8080/payRequest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ticketId: ticket._id,
+                    price: parseFloat(totalPrice)
+                }),
+            });
+            
+            setIsRequesting(true); 
+            setPaidModel(false);
+        } catch (error) {
+            console.error('Lỗi khi gọi API tạo yêu cầu thanh toán:', error);
+            message.error("Lỗi kết nối máy chủ, vui lòng thử lại sau.");
+        }
+    };
+
+    const isTicketOutdated = (dateStr, timeStr) => {
+        if (!dateStr || !timeStr) return true;
+        const safeDateStr = dateStr.split('T')[0].replace(/-/g, '/');
+        const ticketDateTime = new Date(`${safeDateStr} ${timeStr}`);
+        return ticketDateTime < new Date();
+    };
+
+    if (loading) return <div className="text-white text-center mt-20">Loading...</div>;
+    if (!ticket) return <div className="text-white text-center mt-20">Ticket not found</div>;
+
+    const user = ticket.userId;
+    const formattedSeats = formatSeats(ticket.seats);
+    const totalPrice = ((ticket.seats.length * 49.98)).toFixed(2);
+
     return (
-        <>
-            {(user && ticket) ?
-                <div>
-                    <div className='w-full py-4 px-5 text-lg font-bold text-center relative'>
-                        <p onClick={onClickReturn} className='absolute left-3 top-2 border-b-2 border-r-2 border-gray-200 bg-gray-400/50 rounded-full px-3 py-2'><LeftOutlined /></p>
-                        <p>Ticket details</p>
-                    </div>
-                    <div className='w-full fixed -z-10 top-0 p-6 pt-18'>
-                        <div className='border-2 border-gray-200 w-full h-full shadow-2xl rounded-2xl p-6 flex flex-col gap-10'>
-                            <div className='bg-white p-2 rounded-xl '>
-                                <Space direction="vertical" align="center">
-                                    <QRCode value={text || '-'} size={275} color={'#BA19BD'} />
-                                </Space>
-                            </div>
-                            <div className='flex flex-row justify-between'>
-                                <div>
-                                    <p className='text-xl font-bold'>Name</p>
-                                    <p className='text-lg'>{user.username}</p>
-                                </div>
-                                <div>
-                                    <p className='text-xl font-bold'>Date</p>
-                                    <p className='text-lg'>{ticket.date}</p>
-                                </div>
-                            </div>
-                            <div className='flex flex-row justify-between'>
-                                <div>
-                                    <p className='text-xl font-bold'>Time</p>
-                                    <p className='text-lg'>{ticket.time}</p>
-                                </div>
-                                <div>
-                                    <p className='text-xl font-bold'>Seat</p>
-                                    <p className='text-lg'>{seats}</p>
-                                </div>
-                            </div>
+        <div className="text-white min-h-screen">
+            <div className='w-full py-4 px-5 text-lg font-bold text-center relative'>
+                <button onClick={onClickReturn} className='absolute left-3 top-2 border-b-2 border-r-2 border-gray-400 bg-gray-600/50 rounded-full px-3 py-2 transition-colors hover:bg-gray-500'>
+                    <LeftOutlined />
+                </button>
+                <p>Ticket details</p>
+            </div>
 
-                            <div className='bg-orange-200 text-orange-600 px-1 rounded-lg'>
-                                <p className='text-xl font-semibold'>Payment: At counter</p>
-                                <p className='text-lg'>* Please come checkout before the time of the movie</p>
-                            </div>
+            <div className='w-full p-6 pb-20 '>
+                <div className='border-2 border-pink-500/30 bg-purple-900/50 w-full shadow-2xl shadow-purple-500/20 rounded-2xl p-6 flex flex-col gap-10'>
+
+                    <div className='bg-white p-2 rounded-xl self-center'>
+                        <Space direction="vertical" align="center">
+                            <QRCode value={ticket._id || '-'} size={250} color={'#BA19BD'} />
+                        </Space>
+                    </div>
+
+                    <div className='flex flex-row justify-between'>
+                        <div>
+                            <p className='text-xl font-bold text-pink-400'>Name</p>
+                            <p className='text-lg'>{user?.userName || 'N/A'}</p>
+                        </div>
+                        <div className='text-right'>
+                            <p className='text-xl font-bold text-pink-400'>Date</p>
+                            <p className='text-lg'>{ticket.date}</p>
                         </div>
                     </div>
-                    {(new Date(ticket.date) > Date.now() && (!ticket.canceled)) ?
-                        <div className='p-5 w-screen fixed bottom-0'>
-                            {(ticket.paid) ?
-                                <div className='border-b-2 border-r-2 border-gray-200 bg-purple-700 text-purple-200 text-2xl py-3 text-center rounded-lg'>Paid</div>
-                                :
-                                <>
-                                    {(req) ?
-                                        <div className='border-b-2 border-r-2 border-gray-200 bg-pink-700 text-purple-200 text-2xl py-3 text-center rounded-lg'>Requesting...</div>
-                                        :
-                                        <div onClick={onClickOpenPaid} className='border-b-2 border-r-2 border-gray-200 bg-pink-700 text-purple-200 text-2xl py-3 text-center rounded-lg'>Checkout</div>
-                                    }
-                                </>
-                            }
+
+                    <div className='flex flex-row justify-between'>
+                        <div>
+                            <p className='text-xl font-bold text-pink-400'>Time</p>
+                            <p className='text-lg'>{ticket.time}</p>
                         </div>
-                        :
-                        null
-                    }
+                        <div className='text-right'>
+                            <p className='text-xl font-bold text-pink-400'>Seat</p>
+                            <p className='text-lg font-bold'>{formattedSeats}</p>
+                        </div>
+                    </div>
+
+                    {ticket.movieId && (
+                        <div className='border-t border-purple-500/30 pt-4'>
+                            <p className='text-xl font-bold text-pink-400'>Movie</p>
+                            <p className='text-lg'>{ticket.movieId.title}</p>
+                        </div>
+                    )}
+
+                    <div className='bg-orange-200/90 text-orange-800 px-3 py-2 rounded-lg'>
+                        <p className='text-lg font-bold'>Payment: At counter</p>
+                        <p className='text-sm italic'>* Please come checkout before the movie starts</p>
+                    </div>
                 </div>
-                :
-                null
-            }
-            {(paidModel) ?
-                <div onClick={onClickClosePaid} className='w-screen h-screen bg-black/70 fixed z-10 top-0'>
-                    <div className='bg-purple-900/90 fixed bottom-0 w-screen px-8 pt-2 pb-8 rounded-xl flex flex-col items-center gap-4'>
-                        <div className='bg-gray-400/70 w-[100px] h-[5px] rounded-lg'></div>
-                        <div className='w-full flex flex-row justify-between'>
+            </div>
+
+            {!isTicketOutdated(ticket.date, ticket.time) && !ticket.canceled && (
+                <div className='p-5 w-full fixed bottom-0 left-0'>
+                    {ticket.isPaid ? (
+                        <div className='border-b-2 border-r-2 border-teal-500 bg-teal-600 text-white font-bold text-2xl py-3 text-center rounded-lg shadow-lg'>
+                            Paid Successfully
+                        </div>
+                    ) : isRequesting ? (
+                        <div className='border-b-2 border-r-2 border-purple-500 bg-purple-600 text-white font-bold text-2xl py-3 text-center rounded-lg opacity-80 cursor-not-allowed'>
+                            Requesting Verification Sent
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setPaidModel(true)}
+                            className='w-full border-b-2 border-r-2 border-pink-400 bg-pink-600 hover:bg-pink-500 text-white font-bold text-2xl py-3 text-center rounded-lg transition-colors shadow-lg shadow-pink-500/30'
+                        >
+                            Checkout Now
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {paidModel && (
+                <div onClick={() => setPaidModel(false)} className='w-full h-full bg-black/80 fixed z-[999] top-0 left-0 flex items-end justify-center pb-0'>
+                    <div onClick={(e) => e.stopPropagation()} className='bg-gradient-to-b from-[#673191] to-purple-900 w-full md:w-[500px] px-8 pt-4 pb-8 rounded-t-3xl flex flex-col items-center gap-6 animate-slide-up'>
+                        <div className='bg-gray-400/50 w-[60px] h-[6px] rounded-full mb-2'></div>
+
+                        <div className='w-full flex flex-row justify-between items-center bg-purple-800/50 p-4 rounded-2xl border border-purple-500/30'>
                             <div>
-                                <p className='text-lg font-bold'>Total:</p>
-                                <p className='text-lg'>$ {(ticket.seats.length * 4998) / 100}</p>
+                                <p className='text-gray-300 font-semibold'>Total amount</p>
+                                <p className='text-3xl font-bold text-pink-400'>$ {totalPrice}</p>
                             </div>
-                            <img src={QRCheckout} alt="" className='w-[150px] aspect-square' />
+                            <div className='bg-white p-1 rounded-xl'>
+                                <img src={QRCheckout} alt="QR Code" className='w-[100px] aspect-square object-cover rounded-lg' />
+                            </div>
                         </div>
-                        <div className='text-lg text-center text-pink-200'>Please banking and press request to have the admin to check the bill</div>
-                        <div onClick={submitPaid} className='border-b-2 border-r-2 border-gray-200 bg-pink-700 text-purple-200 text-2xl py-3 text-center rounded-lg w-full'>Request</div>
+
+                        <div className='text-center text-pink-200 bg-pink-900/30 p-3 rounded-lg border border-pink-500/20'>
+                            Scan the QR code to transfer. Once completed, press 'Request' for admin verification.
+                        </div>
+
+                        <button
+                            onClick={submitPaid}
+                            className='w-full border-b-2 border-r-2 border-pink-400 bg-pink-600 hover:bg-pink-500 text-white font-bold text-2xl py-3 rounded-xl transition-colors shadow-lg'
+                        >
+                            Send Request
+                        </button>
                     </div>
                 </div>
-                : null
-            }
-        </>
+            )}
+        </div>
+    );
+};
 
-
-    )
-}
-
-export default TicketDetails
+export default TicketDetails;

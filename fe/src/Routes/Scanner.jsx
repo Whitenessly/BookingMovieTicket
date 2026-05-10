@@ -4,10 +4,6 @@ import { LeftOutlined } from '@ant-design/icons'
 import { Navigate } from 'react-router';
 
 const Scanner = () => {
-    const localStaff = localStorage.getItem("staffLogin")
-    if (!localStaff) {
-        return <Navigate to={"/staff"} />;
-    }
     const [scanResult, setScanResult] = useState(null);
 
     useEffect(() => {

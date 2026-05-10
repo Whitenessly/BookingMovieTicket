@@ -2,7 +2,6 @@ import React from 'react'
 import { Link } from 'react-router'
 
 const NotFound = () => {
-    localStorage.removeItem("staffLogin")
     return (
         <div className='w-full h-screen flex flex-col gap-3 pt-10 items-center'>
             <img src="https://i.pinimg.com/736x/4a/20/88/4a2088896fdce876858ca85b4b3b8098.jpg" alt="Error" />

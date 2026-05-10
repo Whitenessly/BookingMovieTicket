@@ -12,8 +12,6 @@ import Tickets from './Routes/Tickets'
 import TicketDetails from './Routes/TicketDetails';
 import User from './Routes/User'
 import NotFound from './Routes/NotFound';
-import Staff from './Routes/Staff';
-import HighestRating from './Routes/HighestRating';
 import StaffHome from './Routes/StaffHome';
 import PayReq from './Routes/PayReq';
 import Scanner from './Routes/Scanner';
@@ -30,14 +28,12 @@ function App() {
         <Route path='/signup' element={<SignUp />} />
         <Route path='/home' element={<Home />} />
         <Route path='/search' element={<Search />} />
-        <Route path='/movie' element={<Movies />} />
-        <Route path='/rating' element={<HighestRating />} />
+        <Route path='/movies' element={<Movies />} />
         <Route path='/movie/:id' element={<MovieDetail />} />
         <Route path='/booking/:id' element={<Booking />} />
         <Route path='/tickets' element={<Tickets />} />
         <Route path='/tickets/:id' element={<TicketDetails />} />
         <Route path='/user' element={<User />} />
-        <Route path='/staff' element={<Staff />} />
         <Route path='/staff/home' element={<StaffHome />} />
         <Route path='/staff/req' element={<PayReq />} />
         <Route path='/staff/scan' element={<Scanner />} />

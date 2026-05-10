@@ -5,48 +5,47 @@ import { LeftOutlined } from '@ant-design/icons'
 
 
 const Login = () => {
-    localStorage.removeItem("staffLogin")
-    const userLocal = localStorage.getItem('userId')
-    if (userLocal) {
-        return <Navigate to={"/home"} />;
-    }
     const nav = useNavigate();
-
-    const [users, setUsers] = React.useState([]);
-
-    React.useEffect(() => {
-        fetch("http://localhost:4000/users")
-            .then((response) => response.json())
-            .then((data) => {
-                setUsers(data)
-            })
-            .catch((error) => {
-                console.error(error)
-            })
-    }, []);
-
-    const [usernameOrEmailValue, setUsernameOrEmailValue] = React.useState();
-    const [passwordValue, setPasswordValue] = React.useState();
-
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
     const [warning, setWarning] = React.useState();
 
-    const onChangeUsernameOrEmail = (event) => {
-        setUsernameOrEmailValue(event.target.value);
+    const onChangeEmail = (event) => {
+        setEmail(event.target.value);
     }
     const onChangePassword = (event) => {
-        setPasswordValue(event.target.value);
+        setPassword(event.target.value);
     }
-    const onSubmit = (event) => {
+
+    const onSubmit = async (event) => {
         event.preventDefault();
-        const user = users.find(user => (user.username === usernameOrEmailValue || user.email === usernameOrEmailValue) && user.password === passwordValue);
-        localStorage.setItem('userId', user.id)
-        if (user) {
+
+        const response = await fetch("http://localhost:8080/users/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(
+                {
+                    email: `${email}`,
+                    password: `${password}`,
+                }
+            ),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
             setWarning('');
-            nav('/home');
         } else {
-            setWarning('Invalid username/email or password');
+            setWarning(result.message);
+            return;
         }
+
+        localStorage.setItem('sessionKey', result.sessionKey);
+        nav('/home');
     }
+
     const onClickReturn = () => {
         nav('/home');
     }
@@ -62,13 +61,14 @@ const Login = () => {
                     <img className='aspect-square w-[90px]' src={Logo} alt="Logo" />
                     <p className='font-bold text-2xl'>Welcome back</p>
                     <p className='text-[#A9A2A3] text-center text-lg'>
-                        Login into your account.
+                        Log in into your account.
                     </p>
                     <form className='w-full flex flex-col mt-2'>
-                        <input onChange={onChangeUsernameOrEmail} type="text" className='text-lg border-[#A9A2A333] border-2 w-full px-5 py-3 rounded-lg focus:border-pink-400 ' placeholder='Username or Email' />
+                        <input onChange={onChangeEmail} type="text" className='text-lg border-[#A9A2A333] border-2 w-full px-5 py-3 rounded-lg focus:border-pink-400 ' placeholder='Email' />
                         <div className='pl-3 text-red-500 text-sm h-6'></div>
                         <input onChange={onChangePassword} type="password" className='text-lg border-[#A9A2A333] border-2 w-full px-5 py-3 rounded-lg focus:border-pink-400 ' placeholder='Password' />
-                        <div className='pl-3 text-red-500 text-sm h-6'>{warning}</div>
+                        <div className='pl-3 text-red-500 text-sm h-6'></div>
+                        <div className='pb-3 text-red-600 text-lg'>{warning}</div>
                         <div onClick={onSubmit} className='text-lg w-full px-5 py-3 rounded-lg border-b-2 border-r-2 border-gray-200 bg-pink-500 text-center'>Login</div>
                     </form>
                 </div>
