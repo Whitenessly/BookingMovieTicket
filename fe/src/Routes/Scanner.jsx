@@ -5,7 +5,9 @@ import { Navigate } from 'react-router';
 
 const Scanner = () => {
     const [scanResult, setScanResult] = useState(null);
-
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
     useEffect(() => {
         const html5qrCodeScanner = new Html5QrcodeScanner(
             "reader",

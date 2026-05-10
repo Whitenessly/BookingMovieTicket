@@ -18,7 +18,9 @@ const formatSeats = (seatsArray) => {
 const TicketDetails = () => {
     const { id: ticketId } = useParams();
     const nav = useNavigate();
-
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
     const [ticket, setTicket] = useState(null);
     const [loading, setLoading] = useState(true);
     const [paidModel, setPaidModel] = useState(false);
@@ -65,8 +67,8 @@ const TicketDetails = () => {
                     price: parseFloat(totalPrice)
                 }),
             });
-            
-            setIsRequesting(true); 
+
+            setIsRequesting(true);
             setPaidModel(false);
         } catch (error) {
             console.error('Lỗi khi gọi API tạo yêu cầu thanh toán:', error);

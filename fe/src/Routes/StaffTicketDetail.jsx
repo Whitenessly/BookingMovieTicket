@@ -4,6 +4,9 @@ import { useNavigate, useParams } from 'react-router';
 
 const StaffTicketDetail = () => {
     const nav = useNavigate()
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
     const onClickReturn = () => {
         history.back()
     }

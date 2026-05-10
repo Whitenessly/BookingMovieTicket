@@ -6,6 +6,9 @@ import { MdCancelPresentation } from "react-icons/md";
 
 const PayReq = () => {
     const nav = useNavigate()
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
     const onClickReturn = () => {
         nav(-1); // Chuẩn React Router thay cho history.back()
     };

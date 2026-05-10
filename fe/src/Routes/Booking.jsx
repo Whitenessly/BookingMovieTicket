@@ -16,6 +16,10 @@ const Booking = () => {
     const nav = useNavigate();
     const movieParam = useParams();
 
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
+
     const [seats, setSeats] = useState(generateInitialSeats());
     const [selected, setSelected] = useState([]); 
     const [time, setTime] = useState(null);

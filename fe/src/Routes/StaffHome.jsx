@@ -7,6 +7,9 @@ import { FaUserPlus } from "react-icons/fa6";
 
 const StaffHome = () => {
     const nav = useNavigate()
+    if(localStorage.getItem('sessionKey') === null){
+        nav('/login')
+    }
     const onClickReturn = () => {
         nav('/home');
     }
